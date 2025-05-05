@@ -33,13 +33,13 @@ function joinRoom(clientConnection, room)
     {
         const jsonSend = { type: "log", logInfo: `Room ${room} does not exist!` };
         utils.sendBinaryJSON(jsonSend, clientConnection);
-        return;
+        return false;
     }
     if (serverState.rooms[room].length === maxClients)
     {
         const jsonSend = { type: "log", logInfo: `Room ${room} is full!` };
         utils.sendBinaryJSON(jsonSend, clientConnection);
-        return;
+        return false;
     }
     clientConnection["room"] = room;
     const jsonSendLog = { type: "log", logInfo: "Client joined the room!" }; 
@@ -47,12 +47,16 @@ function joinRoom(clientConnection, room)
     serverState.rooms[room].push(clientConnection);
     const jsonSend = { type: "goToRoom", room: `${room}` };
     utils.sendBinaryJSON(jsonSend, clientConnection);
+    return true;
 };
 
 function rejoinRoom(clientConnection, room)
 {
-    joinRoom(clientConnection, room);
-    resumeGame(clientConnection);
+    const success = joinRoom(clientConnection, room);
+    if(success)
+    {
+        resumeGame(clientConnection);
+    }
 };
 
 function leaveRoom(clientConnection)
