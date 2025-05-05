@@ -1,0 +1,72 @@
+#gameContainer
+{
+    text-align: center;
+}
+
+#gameBoard
+{
+    border: 3px solid;
+}
+
+#resultText
+{
+    font-family: "consolas", monospace;
+    font-size: 100px;
+}
+
+#startGameButton
+{
+    font-family: "Permament Marker", cursive;
+    font-size: 22px;
+    width: 120px;
+    height: 80px;
+    border: 4px solid;
+    border-radius: 15px;
+    cursor: pointer;
+}
+
+#resetGameButton
+{
+    font-family: "Permament Marker", cursive;
+    font-size: 22px;
+    width: 120px;
+    height: 80px;
+    border: 4px solid;
+    border-radius: 15px;
+    cursor: pointer;
+}
+
+#roomContainer
+{
+    text-align: center;
+}
+
+#createRoomButton
+{
+    font-family: "Permament Marker", cursive;
+    font-size: 22px;
+    width: 120px;
+    height: 80px;
+    border: 4px solid;
+    border-radius: 15px;
+    cursor: pointer;
+}
+
+#joinRoomButton
+{
+    font-family: "Permament Marker", cursive;
+    font-size: 22px;
+    width: 120px;
+    height: 80px;
+    border: 4px solid;
+    border-radius: 15px;
+    cursor: pointer;
+}
+
+.view {
+    display: none;
+  }
+  
+  .view.active {
+    display: block;
+  }
