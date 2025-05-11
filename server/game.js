@@ -59,8 +59,23 @@ class Game // Represents game state in single room
         this.ballY = gameHeight / 2;
         this.ballXDirection = 0;
         this.ballYDirection = 0;
-        this.sendFrameData(clientConnection);
-        this.sendResultUpdate(clientConnection);
+        
+        utils.sendFrameDataBroadcast
+        (
+            clientConnection,
+            this.ballX,
+            this.ballY,
+            this.paddleOne.x,
+            this.paddleOne.y,
+            this.paddleTwo.x,
+            this.paddleTwo.y
+        );
+        utils.sendResultUpdateBroadcast
+        (
+            clientConnection,
+            this.playerOneScore,
+            this.playerTwoScore
+        );
     };
 
     gamePause() // gameActive is still true as we don't want to allow playing alone
@@ -70,7 +85,12 @@ class Game // Represents game state in single room
 
     gameResume(clientConnection)
     {
-        this.sendResultUpdate(clientConnection);
+        utils.sendResultUpdateBroadcast
+        (
+            clientConnection,
+            this.playerOneScore,
+            this.playerTwoScore
+        );
         this.nextTick(clientConnection);
     };
 
@@ -99,10 +119,20 @@ class Game // Represents game state in single room
 
     nextTick(clientConnection)
     {
-        this.intervalID = setTimeout(() => {
+        this.intervalID = setTimeout(() => 
+        {
             this.moveBall();
             this.checkCollision(clientConnection);
-            this.sendFrameData(clientConnection);
+            utils.sendFrameDataBroadcast
+            (
+                clientConnection,
+                this.ballX,
+                this.ballY,
+                this.paddleOne.x,
+                this.paddleOne.y,
+                this.paddleTwo.x,
+                this.paddleTwo.y
+            );
             this.nextTick(clientConnection);
         }, 5)
     };
@@ -126,14 +156,24 @@ class Game // Represents game state in single room
         if(this.ballX <= 0)
         {
             this.playerTwoScore += 1;
-            this.sendResultUpdate(clientConnection);
+            utils.sendResultUpdateBroadcast
+            (
+                clientConnection,
+                this.playerOneScore,
+                this.playerTwoScore
+            );
             this.initBall();
             return;
         }
         if(this.ballX >= gameWidth)
         {
             this.playerOneScore += 1;
-            this.sendResultUpdate(clientConnection);
+            utils.sendResultUpdateBroadcast
+            (
+                clientConnection,
+                this.playerOneScore,
+                this.playerTwoScore
+            );
             this.initBall();
             return;
         }
@@ -233,29 +273,6 @@ class Game // Represents game state in single room
             };           
         }
     };
-
-    sendResultUpdate(clientConnection)
-    {
-        const resultUpdate = {};
-        resultUpdate["playerOneScore"] = this.playerOneScore;
-        resultUpdate["playerTwoScore"] = this.playerTwoScore;
-        const jsonSend = { type: "resultUpdate", resultUpdate: resultUpdate };
-        utils.sendBinaryJSONBroadcast(jsonSend, clientConnection);
-    };
-
-    sendFrameData(clientConnection)
-    {
-        const frameData = {}
-        frameData["ballX"] = this.ballX;
-        frameData["ballY"] = this.ballY;
-        frameData["paddleOneX"] = this.paddleOne.x;
-        frameData["paddleOneY"] = this.paddleOne.y;
-        frameData["paddleTwoX"] = this.paddleTwo.x;
-        frameData["paddleTwoY"] = this.paddleTwo.y;
-        const jsonSend = { type: "frameData", frameData: frameData };
-        utils.sendBinaryJSONBroadcast(jsonSend, clientConnection);
-    };
-    
 }; // end of class Game
 
 module.exports = Game;

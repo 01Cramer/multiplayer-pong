@@ -26,6 +26,40 @@ const initialBallX = gameWidth / 2;
 const initialBallY = gameHeight / 2;
 const ballRadius = 12.5;
 
+const fastOneByteBuffer = new ArrayBuffer(1);
+const fastOneByteBufferView = new DataView(fastOneByteBuffer);
+const fastBuffer = new ArrayBuffer(2);
+const fastBufferView = new DataView(fastBuffer);
+const roomBuffer = new ArrayBuffer(6);
+const roomBufferView = new DataView(roomBuffer);
+
+const commandType = Object.freeze
+({
+    CREATE_ROOM : 0,
+    JOIN_ROOM : 1,
+    PAGE_RELOAD : 2,
+    START_GAME : 3,
+    RESTART_GAME : 4,
+    MOVE_PADDLE : 5,
+    LOG : 6,
+    GO_TO_ROOM : 7,
+    FRAME_DATA : 8,
+    RESULT_UPDATE : 9,
+    GAME_STARTED : 10
+});
+
+const logInfo = Object.freeze
+({
+    0 : "Can't create more rooms",
+    1 : "Room does not exist", 
+    2 : "Room is full", 
+    3 : "Client joined the room",
+    4 : "Client left the room",
+    5 : "Can't start, there is only one player in room"
+});
+
+let gameStarted = false;
+
 const ws = new WebSocket(`ws://${window.location.hostname}:8081`);
 ws.binaryType = "arraybuffer";
 
@@ -49,19 +83,20 @@ function createRoom()
 {
     if(ws.readyState === WebSocket.OPEN)
     {
-        const json = { type: "createRoom" };
-        sendBinaryJSON(json);
+        fastOneByteBufferView.setUint8(0, commandType.CREATE_ROOM);
+        ws.send(fastOneByteBuffer);
     }
 };
 
 function joinRoom()
 {
     const roomID = prompt("Please provide room ID:");
-    if (!roomID) return;
+    if (!roomID || roomID.length !== 5) return; // roomID is always 5 chars
     if(ws.readyState === WebSocket.OPEN)
     {
-        const json = { type: "joinRoom", room: roomID };
-        sendBinaryJSON(json);
+        roomBufferView.setUint8(0, commandType.JOIN_ROOM);
+        roomIDToArrayBuffer(roomID);
+        ws.send(roomBuffer);
     }
 };
 
@@ -69,16 +104,17 @@ function rejoinRoom() // after page reload
 {
     const roomID = sessionStorage.getItem("roomID");
     if (!roomID) return;
-    const json = { type: "pageReload", room: roomID };
-    sendBinaryJSON(json);
+    roomBufferView.setUint8(0, commandType.PAGE_RELOAD);
+    roomIDToArrayBuffer(roomID);
+    ws.send(roomBuffer);
 };
 
 function gameStart()
 {
     if(ws.readyState === WebSocket.OPEN)
     {
-        const json = { type: "startGame" };
-        sendBinaryJSON(json);
+        fastOneByteBufferView.setUint8(0, commandType.START_GAME);
+        ws.send(fastOneByteBuffer);
     }
 };
 
@@ -86,19 +122,24 @@ function gameRestart()
 {
     if(ws.readyState === WebSocket.OPEN)
     {
-        const json = { type: "restartGame" };
-        sendBinaryJSON(json);
+        fastOneByteBufferView.setUint8(0, commandType.RESTART_GAME);
+        ws.send(fastOneByteBuffer);
     }
 };
 
 function changePaddlePosition(event)
 {
-    if(ws.readyState === WebSocket.OPEN)
+    if(gameStarted)
     {
-        const keyPressed = event.keyCode;
-        const json = { type: "movePaddle", keyPressed: keyPressed};
-        sendBinaryJSON(json);
+        if(ws.readyState === WebSocket.OPEN)
+        {
+            const keyPressed = event.keyCode;
+            fastBufferView.setUint8(0, commandType.MOVE_PADDLE);
+            fastBufferView.setUint8(1, keyPressed);
+            ws.send(fastBuffer);
+        }
     }
+    return;
 };
 
 function drawClearBoard()
@@ -143,12 +184,22 @@ function updateResult(playerOneScore, playerTwoScore)
     resultText.textContent = `${playerOneScore} : ${playerTwoScore}`;
 };
 
-function sendBinaryJSON(json)
+function roomIDToArrayBuffer(roomID)
 {
-    const jsonString = JSON.stringify(json);
-    const encoder = new TextEncoder();
-    const binaryData = encoder.encode(jsonString);
-    ws.send(binaryData.buffer);
+    for (let i = 1; i < 6; i++)
+    {
+        roomBufferView.setUint8(i, roomID.charCodeAt(i - 1));
+    }
+};
+
+function decodeRoomID(dataView)
+{
+    let roomID = "";
+    for (let i = 1; i < 6; i++)
+    {
+      roomID += String.fromCharCode(dataView.getUint8(i));
+    }
+    return roomID;
 };
 
 createButton.addEventListener("click", createRoom);
@@ -160,33 +211,32 @@ window.addEventListener("keydown", changePaddlePosition);
 ws.addEventListener("message", messageEvent => 
 {
     const arrayBuffer = messageEvent.data;
-    const jsonString = new TextDecoder().decode(arrayBuffer);
-    const json = JSON.parse(jsonString);
-    const type = json.type;
+    const dataView = new DataView(arrayBuffer); 
+    const type = dataView.getUint8(0);
     switch(type)
     {
-        case "log":
-            const logInfo = json.logInfo;
-            alert(logInfo);
+        case commandType.LOG:
+            alert(logInfo[dataView.getUint8(1)]);
             break;
-        case "goToRoom":
-            const room = json.room;
+        case commandType.GO_TO_ROOM:
+            const room = decodeRoomID(dataView);
             showGameView(room);
             break;
-        case "frameData":
-            const frameData = json.frameData;
-            const ballX = frameData.ballX;
-            const ballY = frameData.ballY;
-            const paddleOneX = frameData.paddleOneX;
-            const paddleOneY = frameData.paddleOneY;
-            const paddleTwoX = frameData.paddleTwoX;
-            const paddleTwoY = frameData.paddleTwoY;
+        case commandType.GAME_STARTED:
+            gameStarted = true;
+            break;
+        case commandType.FRAME_DATA:
+            const ballX = dataView.getUint16(1);
+            const ballY = dataView.getUint16(3);
+            const paddleOneX = dataView.getUint16(5);
+            const paddleOneY = dataView.getUint16(7);
+            const paddleTwoX = dataView.getUint16(9);
+            const paddleTwoY = dataView.getUint16(11);
             renderFrame(ballX, ballY, paddleOneX, paddleOneY, paddleTwoX, paddleTwoY);
             break;
-        case "resultUpdate":
-            const resultUpdate = json.resultUpdate;
-            const playerOneScore = resultUpdate.playerOneScore;
-            const playerTwoScore = resultUpdate.playerTwoScore;
+        case commandType.RESULT_UPDATE:
+            const playerOneScore = dataView.getUint16(1);
+            const playerTwoScore = dataView.getUint16(3);
             updateResult(playerOneScore, playerTwoScore);
             break;
         default:
@@ -196,7 +246,7 @@ ws.addEventListener("message", messageEvent =>
 
 ws.addEventListener("open", () =>
 {
-    rejoinRoom();
+    rejoinRoom();    
 });
 
 // Draw initial frame

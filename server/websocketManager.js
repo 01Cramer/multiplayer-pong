@@ -1,4 +1,6 @@
 const roomManager = require("./roomManager");
+const utils = require("./utils");
+const buffers = require("./buffers");
 
 function handleWebSocket(webSocketServer)
 {
@@ -8,38 +10,39 @@ function handleWebSocket(webSocketServer)
 
         clientConnection.on("message", data => 
         {
-            const jsonRecived = JSON.parse(data.toString('utf8'));
-            const typeOfMessage = jsonRecived.type;
-            switch(typeOfMessage)
+            const arrayBuffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+            const dataView = new DataView(arrayBuffer);
+            const command = dataView.getUint8(0);
+            switch(command)
             {
-                case "createRoom":
+                case buffers.commandType.CREATE_ROOM:
                 {
                     roomManager.createRoom(clientConnection);
                     break;
                 }
-                case "joinRoom":
+                case buffers.commandType.JOIN_ROOM:
                 {
-                    const room = jsonRecived.room;
+                    const room = utils.decodeRoomID(dataView);
                     roomManager.joinRoom(clientConnection, room);
                     break;
                 }
-                case "pageReload":
-                    const room = jsonRecived.room;
+                case buffers.commandType.PAGE_RELOAD:
+                    const room = utils.decodeRoomID(dataView);
                     roomManager.rejoinRoom(clientConnection, room);
                     break;
-                case "startGame":
+                case buffers.commandType.START_GAME:
                 {
                     roomManager.startGame(clientConnection);
                     break;
                 }
-                case "restartGame":
+                case buffers.commandType.RESTART_GAME:
                 {
                     roomManager.restartGame(clientConnection);
                     break;
                 }
-                case "movePaddle":
+                case buffers.commandType.MOVE_PADDLE:
                 {
-                    const keyPressed = jsonRecived.keyPressed;
+                    const keyPressed = dataView.getUint8(1);
                     roomManager.movePaddle(clientConnection, keyPressed);
                     break;
                 }

@@ -9,44 +9,38 @@ let roomID;
 
 function createRoom(clientConnection)
 {
-    if(serverState.rooms.length > maxRooms)
+    if(Object.keys(serverState.rooms).length === maxRooms)
     {
-        const jsonSend = { type: "log", logInfo: "Can't create more rooms" };
-        utils.sendBinaryJSON(jsonSend, clientConnection);
+        utils.sendLogUnicast(clientConnection, 0);
         return;
     }
     roomID = utils.generateKey(5);
-    while(roomID in serverState.rooms)
+    while(Object.keys(serverState.rooms).includes(roomID))
     {
         roomID = generateKey(5);
     }
     serverState.rooms[roomID] = [clientConnection];
     clientConnection["room"] = roomID;
     console.log(`Created room: ${roomID}`);
-    const jsonSend = { type: "goToRoom", room: `${roomID}` };
-    utils.sendBinaryJSON(jsonSend, clientConnection);
+    utils.sendGoToRoomUnicast(clientConnection, roomID);
 };
 
 function joinRoom(clientConnection, room)
 {
     if (!Object.keys(serverState.rooms).includes(room))
     {
-        const jsonSend = { type: "log", logInfo: `Room ${room} does not exist!` };
-        utils.sendBinaryJSON(jsonSend, clientConnection);
+        utils.sendLogUnicast(clientConnection, 1);
         return false;
     }
     if (serverState.rooms[room].length === maxClients)
     {
-        const jsonSend = { type: "log", logInfo: `Room ${room} is full!` };
-        utils.sendBinaryJSON(jsonSend, clientConnection);
+        utils.sendLogUnicast(clientConnection, 2);
         return false;
     }
     clientConnection["room"] = room;
-    const jsonSendLog = { type: "log", logInfo: "Client joined the room!" }; 
-    utils.sendBinaryJSONBroadcast(jsonSendLog, clientConnection); // At this point client has assigned room but is not inside yet
+    utils.sendLogBroadcast(clientConnection, 3) // At this point client has assigned room but is not inside yet
     serverState.rooms[room].push(clientConnection);
-    const jsonSend = { type: "goToRoom", room: `${room}` };
-    utils.sendBinaryJSON(jsonSend, clientConnection);
+    utils.sendGoToRoomUnicast(clientConnection, room);
     return true;
 };
 
@@ -66,8 +60,7 @@ function leaveRoom(clientConnection)
     {
         serverState.rooms[room] = serverState.rooms[room].filter(client => client !== clientConnection);
         console.log("Client left the room!");
-        const jsonSend = { type: "log", logInfo: "Client left the room" };
-        utils.sendBinaryJSONBroadcast(jsonSend, clientConnection); // At this point only second player is in the room
+        utils.sendLogBroadcast(clientConnection, 4); // At this point only second player is in the room
         pauseGame(clientConnection);
         if(serverState.rooms[room].length === 0)
         {
@@ -96,12 +89,12 @@ function startGame(clientConnection)
         if(!serverState.games[room].isGameActive())
         {
             serverState.games[room].gameStart(clientConnection);
+            utils.sendGameStartedStatusBroadcast(clientConnection);
         }
     }
     else
     {
-        const jsonSend = { type: "log", logInfo: `Can't start, there is only one player in room ${room}!` };
-        utils.sendBinaryJSON(jsonSend, clientConnection);
+        utils.sendLogUnicast(clientConnection, 5);
     }
 };
 
