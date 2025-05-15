@@ -11,23 +11,15 @@ class Game // Represents game state in single room
 {
     constructor()
     {
-        this.paddleOne = 
-        {
-            x: 0,
-            y: (gameHeight / 2) - (paddleHeight / 2)
-        }
-        this.paddleTwo = 
-        {
-            x: gameWidth - paddleWidth,
-            y: (gameHeight / 2) - (paddleHeight / 2)
-        }
         this.gameActive = false;
         this.intervalID = null;
-        this.ballSpeed = 1;
+        this.ballSpeed = 0.5;
         this.ballX = gameWidth / 2;
         this.ballY = gameHeight / 2;
         this.ballXDirection = 0;
         this.ballYDirection = 0;
+        this.paddleOneY = (gameHeight / 2) - (paddleHeight / 2);
+        this.paddleTwoY = (gameHeight / 2) - (paddleHeight / 2);
         this.playerOneScore = 0;
         this.playerTwoScore = 0;
     };
@@ -46,13 +38,13 @@ class Game // Represents game state in single room
 
     gameRestart(clientConnection)
     {
-        this.gameActive = false;
         clearInterval(this.intervalID);
+        this.gameActive = false;
         this.playerOneScore = 0;
         this.playerTwoScore = 0;
         this.paddleOneX = 0;
-        this.paddleOneY = (gameHeight / 2) - (paddleHeight / 2);
         this.paddleTwoX = gameWidth - paddleWidth;
+        this.paddleOneY = (gameHeight / 2) - (paddleHeight / 2);
         this.paddleTwoY = (gameHeight / 2) - (paddleHeight / 2);
         this.ballSpeed = 1;
         this.ballX = gameWidth / 2;
@@ -65,10 +57,8 @@ class Game // Represents game state in single room
             clientConnection,
             this.ballX,
             this.ballY,
-            this.paddleOne.x,
-            this.paddleOne.y,
-            this.paddleTwo.x,
-            this.paddleTwo.y
+            this.paddleOneY,
+            this.paddleTwoY
         );
         utils.sendResultUpdateBroadcast
         (
@@ -128,13 +118,11 @@ class Game // Represents game state in single room
                 clientConnection,
                 this.ballX,
                 this.ballY,
-                this.paddleOne.x,
-                this.paddleOne.y,
-                this.paddleTwo.x,
-                this.paddleTwo.y
+                this.paddleOneY,
+                this.paddleTwoY
             );
             this.nextTick(clientConnection);
-        }, 5)
+        }, 10)
     };
 
     moveBall()
@@ -177,15 +165,15 @@ class Game // Represents game state in single room
             this.initBall();
             return;
         }
-        if(this.ballX - ballRadius <= paddleWidth && (this.ballY <= this.paddleOne.y + paddleHeight && this.ballY >= this.paddleOne.y))
+        if(this.ballX - ballRadius <= paddleWidth && (this.ballY <= this.paddleOneY + paddleHeight && this.ballY >= this.paddleOneY))
         {
             this.ballXDirection *= -1;
-            this.ballSpeed += 0.5;
+            this.ballSpeed += 0.25;
         }
-        if(this.ballX + ballRadius >= this.paddleTwo.x && (this.ballY <= this.paddleTwo.y + paddleHeight && this.ballY >= this.paddleTwo.y))
+        if(this.ballX + ballRadius >= this.paddleTwoX && (this.ballY <= this.paddleTwoY + paddleHeight && this.ballY >= this.paddleTwoY))
         {
             this.ballXDirection *= -1;
-            this.ballSpeed += 0.5;
+            this.ballSpeed += 0.25;
         }
     };
 
@@ -202,33 +190,33 @@ class Game // Represents game state in single room
             {
                 case(paddleUpW):
                 {
-                    if(this.paddleOne.y > 0)
+                    if(this.paddleOneY > 0)
                     {
-                        this.paddleOne.y -= paddleSpeed;
+                        this.paddleOneY -= paddleSpeed;
                     }
                     break;
                 }
                 case(paddleDownS):
                 {
-                    if(this.paddleOne.y < gameHeight - paddleHeight)
+                    if(this.paddleOneY < gameHeight - paddleHeight)
                     {
-                        this.paddleOne.y += paddleSpeed;
+                        this.paddleOneY += paddleSpeed;
                     }
                     break;
                 }
                 case(paddleUpArrow):
                 {
-                    if(this.paddleOne.y > 0)
+                    if(this.paddleOneY > 0)
                     {
-                        this.paddleOne.y -= paddleSpeed;
+                        this.paddleOneY -= paddleSpeed;
                     }
                     break;
                 }
                 case(paddleDownArrow):
                 {
-                    if(this.paddleOne.y < gameHeight - paddleHeight)
+                    if(this.paddleOneY < gameHeight - paddleHeight)
                     {
-                        this.paddleOne.y += paddleSpeed;
+                        this.paddleOneY += paddleSpeed;
                     }
                     break;
                 }
@@ -240,33 +228,33 @@ class Game // Represents game state in single room
             {
                 case(paddleUpW):
                 {
-                    if(this.paddleTwo.y > 0)
+                    if(this.paddleTwoY > 0)
                     {
-                        this.paddleTwo.y -= paddleSpeed;
+                        this.paddleTwoY -= paddleSpeed;
                     }
                     break;
                 }
                 case(paddleDownS):
                 {
-                    if(this.paddleTwo.y < gameHeight - paddleHeight)
+                    if(this.paddleTwoY < gameHeight - paddleHeight)
                     {
-                        this.paddleTwo.y += paddleSpeed;
+                        this.paddleTwoY += paddleSpeed;
                     }
                     break;
                 }
                 case(paddleUpArrow):
                 {
-                    if(this.paddleTwo.y > 0)
+                    if(this.paddleTwoY > 0)
                     {
-                        this.paddleTwo.y -= paddleSpeed;
+                        this.paddleTwoY -= paddleSpeed;
                     }
                     break;
                 }
                 case(paddleDownArrow):
                 {
-                    if(this.paddleTwo.y < gameHeight - paddleHeight)
+                    if(this.paddleTwoY < gameHeight - paddleHeight)
                     {
-                        this.paddleTwo.y += paddleSpeed;
+                        this.paddleTwoY += paddleSpeed;
                     }
                     break;
                 }

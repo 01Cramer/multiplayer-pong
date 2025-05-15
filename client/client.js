@@ -19,8 +19,8 @@ const gameWidth = gameBoard.width;
 const gameHeight = gameBoard.height;
 const paddleWidth = 25;
 const paddleHeight = 100;
-const initialPaddleOneX = 0;
-const initialPaddleTwoX = gameWidth - paddleWidth;
+const paddleOneX = 0;
+const paddleTwoX = gameWidth - paddleWidth;
 const initialPaddleY = (gameHeight / 2) - (paddleHeight / 2); 
 const initialBallX = gameWidth / 2;
 const initialBallY = gameHeight / 2;
@@ -172,7 +172,7 @@ function drawPaddles(paddleOneX, paddleOneY, paddleTwoX, paddleTwoY)
     ctx.strokeRect(paddleTwoX, paddleTwoY, paddleWidth, paddleHeight);
 };
 
-function renderFrame(ballX, ballY, paddleOneX, paddleOneY, paddleTwoX, paddleTwoY)
+function renderFrame(ballX, ballY, paddleOneY, paddleTwoY)
 {
     drawClearBoard();
     drawPaddles(paddleOneX, paddleOneY, paddleTwoX, paddleTwoY);
@@ -228,11 +228,9 @@ ws.addEventListener("message", messageEvent =>
         case commandType.FRAME_DATA:
             const ballX = dataView.getUint16(1);
             const ballY = dataView.getUint16(3);
-            const paddleOneX = dataView.getUint16(5);
-            const paddleOneY = dataView.getUint16(7);
-            const paddleTwoX = dataView.getUint16(9);
-            const paddleTwoY = dataView.getUint16(11);
-            renderFrame(ballX, ballY, paddleOneX, paddleOneY, paddleTwoX, paddleTwoY);
+            const paddleOneY = dataView.getUint16(5);
+            const paddleTwoY = dataView.getUint16(7);
+            renderFrame(ballX, ballY, paddleOneY, paddleTwoY);
             break;
         case commandType.RESULT_UPDATE:
             const playerOneScore = dataView.getUint16(1);
@@ -251,5 +249,5 @@ ws.addEventListener("open", () =>
 
 // Draw initial frame
 drawClearBoard();
-drawPaddles(initialPaddleOneX, initialPaddleY, initialPaddleTwoX, initialPaddleY);
+drawPaddles(paddleOneX, initialPaddleY, paddleTwoX, initialPaddleY);
 drawBall(initialBallX, initialBallY);

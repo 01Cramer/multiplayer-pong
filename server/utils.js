@@ -73,7 +73,7 @@ function sendGameStartedStatusBroadcast(clientConnection)
     }
 };
 
-function sendFrameDataBroadcast(clientConnection, ballX, ballY, paddleOneX, paddleOneY, paddleTwoX, paddleTwoY)
+function sendFrameDataBroadcast(clientConnection, ballX, ballY, paddleOneY, paddleTwoY)
 {
     const room = clientConnection.room;
     const players = serverState.rooms[room];
@@ -82,10 +82,8 @@ function sendFrameDataBroadcast(clientConnection, ballX, ballY, paddleOneX, padd
         buffers.frameBufferView.setUint8(0, buffers.commandType.FRAME_DATA);
         buffers.frameBufferView.setUint16(1, ballX);
         buffers.frameBufferView.setUint16(3, ballY);
-        buffers.frameBufferView.setUint16(5, paddleOneX);
-        buffers.frameBufferView.setUint16(7, paddleOneY);
-        buffers.frameBufferView.setUint16(9, paddleTwoX);
-        buffers.frameBufferView.setUint16(11, paddleTwoY);
+        buffers.frameBufferView.setUint16(5, paddleOneY);
+        buffers.frameBufferView.setUint16(7, paddleTwoY);
         for (const player of players)
         {
             player.send(buffers.frameBuffer);

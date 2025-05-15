@@ -3,7 +3,7 @@ const fastBufferView = new DataView(fastBuffer);
 const roomBuffer = new ArrayBuffer(6);
 const roomBufferView = new DataView(roomBuffer);
 
-const frameBuffer = new ArrayBuffer(13);
+const frameBuffer = new ArrayBuffer(9);
 const frameBufferView = new DataView(frameBuffer);
 const resultBuffer = new ArrayBuffer(5);
 const resultBufferView = new DataView(resultBuffer);
